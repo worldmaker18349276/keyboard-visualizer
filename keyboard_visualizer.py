@@ -173,5 +173,8 @@ try:
 
             draw_keyboard(stdscr, shifted, pressed, prev)
 
+except KeyboardInterrupt:
+    pass
+
 finally:
     curses.flushinp()
