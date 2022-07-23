@@ -77,25 +77,35 @@ for match in re.finditer(r"\[.+?\]", pos_temp):
     pos.append((y, x, num))
 
 
-def add_key_attr(stdscr, y, x, num, is_pressed):
-    if is_pressed:
+PRESSED = 0
+RELEASED = 1
+CLEAR = 2
+
+def add_key_attr(stdscr, y, x, num, state):
+    if state == PRESSED:
         stdscr.chgat(y, x, num, curses.A_REVERSE)
+    elif state == RELEASED:
+        stdscr.chgat(y, x, num, curses.A_NORMAL)
     else:
         stdscr.chgat(y, x, 1, curses.A_DIM)
         stdscr.chgat(y, x+1, num-2, curses.A_NORMAL)
         stdscr.chgat(y, x+num-1, 1, curses.A_DIM)
 
-def draw_keyboard(stdscr, shifted, pressed):
+def draw_keyboard(stdscr, shifted, pressed, prev):
     temp = keyboard_temp_shift if shifted else keyboard_temp
     for line, line_temp in enumerate(temp.split("\n")):
         stdscr.addstr(line, 0, line_temp)
 
     for y, x, num in pos:
-        add_key_attr(stdscr, y, x, num, False)
+        add_key_attr(stdscr, y, x, num, CLEAR)
+
+    for scan_code in prev:
+        y, x, num = pos[codes.index(scan_code)]
+        add_key_attr(stdscr, y, x, num, RELEASED)
 
     for scan_code in pressed:
         y, x, num = pos[codes.index(scan_code)]
-        add_key_attr(stdscr, y, x, num, True)
+        add_key_attr(stdscr, y, x, num, PRESSED)
 
 try:
     @curses.wrapper
@@ -105,11 +115,12 @@ try:
 
         shifted = False
         pressed = set()
+        prev = set()
         currkey = None
         count = 0
 
         stdscr.clear()
-        draw_keyboard(stdscr, shifted, pressed)
+        draw_keyboard(stdscr, shifted, pressed, prev)
 
         while True:
             stdscr.refresh()
@@ -136,10 +147,22 @@ try:
             y, x, num = pos[codes.index(event.scan_code)]
             if event.event_type == keyboard.KEY_DOWN:
                 pressed.add(event.scan_code)
-                add_key_attr(stdscr, y, x, num, True)
+                prev.discard(event.scan_code)
+                add_key_attr(stdscr, y, x, num, PRESSED)
+            elif event.scan_code in pressed and not keyboard.is_modifier(event.scan_code):
+                pressed.remove(event.scan_code)
+                prev.add(event.scan_code)
+                add_key_attr(stdscr, y, x, num, RELEASED)
             else:
                 pressed.discard(event.scan_code)
-                add_key_attr(stdscr, y, x, num, False)
+                prev.discard(event.scan_code)
+                add_key_attr(stdscr, y, x, num, CLEAR)
+
+            if event.event_type == keyboard.KEY_DOWN and not keyboard.is_modifier(event.scan_code):
+                for scan_code in prev:
+                    y, x, num = pos[codes.index(scan_code)]
+                    add_key_attr(stdscr, y, x, num, CLEAR)
+                prev.clear()
 
             if not shifted and event.name == "shift" and event.event_type == "down":
                 shifted = True
@@ -148,7 +171,7 @@ try:
             else:
                 continue
 
-            draw_keyboard(stdscr, shifted, pressed)
+            draw_keyboard(stdscr, shifted, pressed, prev)
 
 finally:
     curses.flushinp()
