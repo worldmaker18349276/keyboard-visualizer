@@ -119,6 +119,17 @@ try:
             # stdscr.clrtobot()
             # stdscr.addstr(event.to_json())
 
+            if event.event_type == "down":
+                hotkey = keyboard.get_hotkey_name() or "unknown"
+                if currkey == hotkey:
+                    count += 1
+                else:
+                    currkey = hotkey
+                    count = 1
+                stdscr.move(0, 0)
+                stdscr.clrtoeol()
+                stdscr.addstr("⌨   {}{}".format(hotkey, str(f" ✕ {count}" if count > 1 else "")))
+
             if event.scan_code not in codes:
                 continue
 
@@ -129,17 +140,6 @@ try:
             else:
                 pressed.discard(event.scan_code)
                 add_key_attr(stdscr, y, x, num, False)
-
-            hotkey = keyboard.get_hotkey_name()
-            if hotkey:
-                if currkey == hotkey:
-                    count += 1
-                else:
-                    currkey = hotkey
-                    count = 1
-                stdscr.move(0, 0)
-                stdscr.clrtoeol()
-                stdscr.addstr("⌨   {}{}".format(hotkey, str(f" ✕ {count}" if count > 1 else "")))
 
             if not shifted and event.name == "shift" and event.event_type == "down":
                 shifted = True
