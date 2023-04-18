@@ -1,6 +1,7 @@
 import re
 import curses
 import keyboard
+import sys
 
 
 names_temp = r"""
@@ -66,6 +67,15 @@ keyboard_cangjie_temp = r"""
 [ ⇧  ]重 難 金 女 月 弓 一  ， 。／ [   ⇧   ]    [↑]
 [⌃ ][𐌎 ][⌥ ][       ␣        ][⌥ ][𐌎 ][⌸][⌃ ] [←][↓][→]
 """
+
+
+if len(sys.argv) > 1 and sys.argv[1] == "chewing":
+    keyboard_temp = keyboard_chewing_temp
+    keyboard_temp_shift = keyboard_chewing_temp_shift
+
+if len(sys.argv) > 1 and sys.argv[1] == "cangjie":
+    keyboard_temp = keyboard_cangjie_temp
+    keyboard_temp_shift = keyboard_chewing_temp_shift
 
 
 codes = []
